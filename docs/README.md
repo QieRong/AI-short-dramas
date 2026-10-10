@@ -43,15 +43,23 @@ AI-short-dramas/
 
 ### 脚本清单
 
-| 脚本 | 职责 |
-|---|---|
-| `agnes_client.py` | 核心：配置加载、密钥读取、HTTP 请求（含重试） |
-| `agnes_text.py` | 文本生成 |
-| `agnes_image.py` | 图像生成 |
-| `agnes_video.py` | 视频生成（创建任务 + 轮询 + 下载） |
-| `tts_narrate.py` | Edge-TTS 配音 |
-| `compose_video.py` | FFmpeg 合成 |
-| `check_env.py` | 环境自检 |
+| 脚本 | 状态 | 职责 |
+|---|---|---|
+| `agnes_client.py` | ✅ | 核心：配置加载、密钥读取、HTTP 请求（含重试） |
+| `agnes_text.py` | ✅ | 文本生成 |
+| `agnes_image.py` | ✅ | 图像生成 |
+| `agnes_video.py` | ✅ | 视频生成（创建任务 + 轮询 + 下载） |
+| `kenburns.py` | ✅ | 准视频生成（静态图 + FFmpeg 运镜） |
+| `extract_frames.py` | ✅ | 视频抽帧（散图 + 长图 / 平移对比图） |
+| `tts_narrate.py` | ✅ | Edge-TTS 配音 |
+| `compose_video.py` | ✅ | FFmpeg 合成 |
+| `check_env.py` | ✅ | 环境自检 |
+| `gen_characters.py` | ✅ | 角色图批量生成 |
+| `gen_linqian_scar*.py` | ✅ | 角色图局部修改（图生图补疤） |
+| `test_cooldown.py` / `test_video_quota.py` | ✅ | 额度与限流探测 |
+| `run_episode.py` | 📋 | 单集流水线编排器（规划中） |
+
+> ✅ = 已实现可运行；📋 = 规划中。**最后核对日期：2026-10-10**
 
 ## 使用步骤
 

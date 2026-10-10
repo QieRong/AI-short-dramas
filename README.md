@@ -88,22 +88,24 @@ python check_env.py
 
 ### 3. 脚本用途
 
-| 脚本 | 用途 |
-| --- | --- |
-| `check_env.py` | 环境自检（密钥 / FFmpeg / 依赖 / 磁盘） |
-| `agnes_client.py` | 统一调用封装（配置、密钥读取、错误类型） |
-| `agnes_text.py` | 文本调用（剧本 + 分镜共用） |
-| `agnes_image.py` | 图像调用（角色图 + 分镜图共用） |
-| `agnes_video.py` | 视频任务提交 + 轮询 + 下载 |
-| `kenburns.py` | 准视频生成（静态图 + FFmpeg 运镜） |
-| `extract_frames.py` | 视频抽帧（散图 + 长图 / 平移对比图） |
-| `tts_narrate.py` | Edge-TTS 批量配音 |
-| `compose_video.py` | FFmpeg 拼接、混音、烧字幕 |
-| `gen_characters.py` | 角色图批量生成 |
-| `gen_linqian_scar*.py` | 角色图局部修改（图生图补疤痕） |
-| `test_*.py` | 额度 / 限流探测脚本 |
+| 脚本 | 状态 | 用途 |
+| --- | --- | --- |
+| `check_env.py` | ✅ | 环境自检（密钥 / FFmpeg / 依赖 / 磁盘） |
+| `agnes_client.py` | ✅ | 统一调用封装（配置、密钥读取、错误类型） |
+| `agnes_text.py` | ✅ | 文本调用（剧本 + 分镜共用） |
+| `agnes_image.py` | ✅ | 图像调用（角色图 + 分镜图共用） |
+| `agnes_video.py` | ✅ | 视频任务提交 + 轮询 + 下载 |
+| `kenburns.py` | ✅ | 准视频生成（静态图 + FFmpeg 运镜） |
+| `extract_frames.py` | ✅ | 视频抽帧（散图 + 长图 / 平移对比图） |
+| `tts_narrate.py` | ✅ | Edge-TTS 批量配音 |
+| `compose_video.py` | ✅ | FFmpeg 拼接、混音、烧字幕 |
+| `gen_characters.py` | ✅ | 角色图批量生成 |
+| `gen_linqian_scar*.py` | ✅ | 角色图局部修改（图生图补疤痕） |
+| `test_*.py` | ✅ | 额度 / 限流探测脚本 |
+| `run_episode.py` | 📋 | 单集流水线编排器（规划中） |
 
-> **注**：单集编排器 `run_episode.py` 尚在规划中，当前各环节脚本可独立调用。
+> ✅ = 已实现可运行；📋 = 规划中，尚未落地。
+> 单集编排器 `run_episode.py` 尚未实现，当前各环节脚本可独立调用。
 
 ### 4. 运行
 
