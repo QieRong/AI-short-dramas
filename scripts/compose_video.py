@@ -6,8 +6,8 @@
 
 用法：
     python compose_video.py --check                    # 检查 ffmpeg 可用性
-    python compose_video.py --clips a.mp4 b.mp4 --out ../05_final/EP01.mp4
-    python compose_video.py --clips *.mp4 --audio line.mp3 --out EP01.mp4 --subtitle sub.srt
+    python compose_video.py --clips a.mp4 b.mp4 --out ../05_final/output.mp4
+    python compose_video.py --clips *.mp4 --audio line.mp3 --out output.mp4 --subtitle sub.srt
 """
 
 from __future__ import annotations

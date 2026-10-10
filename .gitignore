@@ -6,11 +6,15 @@
 # --- 1. 密钥与私密配置（最高优先，绝不提交）---
 .env
 .env.*
+*.env
 !*.env.example
 !**/.env.example
 **/.env
 **/.env.*
 scripts/.env
+
+# 注：scripts/agnes_config.yaml 经核实不含密钥（密钥走环境变量），
+#     且已入库、脚本依赖它运行，故**不排除**（保留在仓库中）。
 
 # --- 2. 角色照片 / 分镜图 / 生成的图像 ---
 # 所有素材目录下的图片一律不上传
@@ -39,6 +43,26 @@ scripts/.env
 **/*.mov
 **/*.mkv
 **/*.webm
+**/*.png
+**/*.jpg
+**/*.jpeg
+
+# --- 3b. 抽帧衍生品（AGENTS.md v1.7 §3.8）---
+*_frames/
+*_strip.png
+*_pan_compare.png
+
+# --- 3c. 原创 IP（核心资产，不随自动 push 公开）---
+00_bible/
+01_outline/
+02_scripts/
+03_storyboard/
+.workbuddy/
+04_assets/
+scripts/gen_characters.py
+scripts/gen_linqian_scar.py
+scripts/gen_linqian_scar_boost.py
+scripts/gen_linqian_scar_img2img.py
 
 # --- 4. 临时文件与日志 ---
 *.tmp

@@ -10,7 +10,7 @@
     right : 向右平移（pan right）
 
 用法：
-    python kenburns.py --image ../04_assets/characters/林浅_护照.png \
+    python kenburns.py --image ../04_assets/characters/角色A_护照.png \
                        --out ../04_assets/video/_test_kenburns_in.mp4 \
                        --motion in --duration 5
 """
