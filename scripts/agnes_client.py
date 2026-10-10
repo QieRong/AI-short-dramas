@@ -35,6 +35,12 @@ class AgnesConfig:
     image_model: str
     video_model: str
     site: str
+    video_size: str = "720P"
+    video_aspect_ratio: str = "9:16"
+    video_seconds: str = "5"
+    video_poll_interval: int = 5
+    video_max_poll_attempts: int = 120
+    video_create_interval: int = 45
 
     @classmethod
     def load(cls, config_path: Path = CONFIG_PATH) -> "AgnesConfig":
@@ -44,45 +50,54 @@ class AgnesConfig:
         sites = raw.get("sites", {})
         base_url = sites.get(site, {}).get("base_url", "https://api.agnes-ai.cn/v1")
         models = raw.get("models", {})
+        video = raw.get("video", {})
         return cls(
             base_url=base_url.rstrip("/"),
             text_model=models.get("text", "agnes-3.0-flash"),
             image_model=models.get("image", "agnes-image-2.5-flash"),
             video_model=models.get("video", "agnes-video-2.5-flash"),
             site=site,
+            video_size=str(video.get("size", "720P")),
+            video_aspect_ratio=str(video.get("aspect_ratio", "9:16")),
+            video_seconds=str(video.get("seconds", "5")),
+            video_poll_interval=int(video.get("poll_interval", 5)),
+            video_max_poll_attempts=int(video.get("max_poll_attempts", 120)),
+            video_create_interval=int(video.get("create_interval", 45)),
         )
 
 
 def _parse_simple_yaml(path: Path) -> dict[str, Any]:
-    """极简 YAML 解析：仅支持两层嵌套 + 标量值。
+    """极简 YAML 解析：支持多层嵌套字典 + 标量值。
 
-    避免引入 PyYAML 依赖。若配置超出该复杂度需换用正式解析器。
+    避免引入 PyYAML 依赖。基于缩进栈实现，仅处理 `key: value` 形式；
+    不支持列表、多行字符串、锚点等复杂语法。
     """
     result: dict[str, Any] = {}
-    current: dict[str, Any] | None = None
-    indent_stack: list[tuple[int, dict[str, Any]]] = []
+    # 栈元素: (该层缩进量, 该层的字典对象)
+    stack: list[tuple[int, dict[str, Any]]] = [(-1, result)]
 
-    for line in path.read_text(encoding="utf-8").splitlines():
-        stripped = line.split("#", 1)[0].rstrip()
-        if not stripped:
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.split("#", 1)[0].rstrip()
+        if not line.strip():
             continue
         indent = len(line) - len(line.lstrip())
-        if ":" not in stripped:
+        if ":" not in line:
             continue
-        key, _, value = stripped.strip().partition(":")
+        key, _, value = line.strip().partition(":")
         key, value = key.strip(), value.strip()
 
-        if not value:  # 嵌套节点
-            node: dict[str, Any] = {}
-            if indent == 0:
-                result[key] = node
-            else:
-                target = indent_stack[-1][1] if indent_stack else result
-                target[key] = node
-            indent_stack.append((indent, node))
+        # 弹出缩进大于等于当前行的层级，找到父级
+        while len(stack) > 1 and indent <= stack[-1][0]:
+            stack.pop()
+        parent = stack[-1][1]
+
+        if value:
+            parent[key] = _coerce(value)
         else:
-            target = indent_stack[-1][1] if indent_stack and indent > indent_stack[-1][0] else result
-            target[key] = _coerce(value)
+            node: dict[str, Any] = {}
+            parent[key] = node
+            stack.append((indent, node))
+
     return result
 
 
@@ -174,6 +189,19 @@ class AgnesAPIError(RuntimeError):
     """Agnes API 返回错误。"""
 
 
+def _build_opener():
+    """构造不走代理的 opener。
+
+    背景：本机残留了 Steam++ 的代理环境变量（HTTP_PROXY=127.0.0.1:11461），
+    会导致请求被异常转发。这里显式禁用代理，保证直连 Agnes 服务器。
+    """
+    handler = urllib.request.ProxyHandler({})  # 空字典 = 不使用任何代理
+    return urllib.request.build_opener(handler)
+
+
+_OPENER = _build_opener()
+
+
 def request_json(
     config: AgnesConfig,
     method: str,
@@ -181,11 +209,15 @@ def request_json(
     payload: dict[str, Any] | None = None,
     timeout: int = 120,
     max_retries: int = 3,
+    retry_on_429: bool = True,
 ) -> dict[str, Any]:
     """发送 JSON 请求并返回解析结果。
 
     endpoint 形如 "/chat/completions"，会自动拼接 base_url。
-    对 5xx 与网络错误做指数退避重试；4xx 直接抛出（不重试）。
+    对 5xx 与网络错误做指数退避重试；4xx 默认直接抛出（不重试）。
+    例外：429（限流）在 retry_on_429=True 时按更长退避重试，
+    因为免费层的限流窗口是「时间型」的，短暂重试通常无意义。
+    显式绕过系统代理，避免残留代理干扰。
     """
     url = f"{config.base_url}{endpoint}"
     data = json.dumps(payload).encode("utf-8") if payload is not None else None
@@ -198,13 +230,19 @@ def request_json(
     for attempt in range(1, max_retries + 1):
         req = urllib.request.Request(url, data=data, headers=headers, method=method)
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            with _OPENER.open(req, timeout=timeout) as resp:
                 body = resp.read().decode("utf-8")
                 return json.loads(body) if body else {}
         except urllib.error.HTTPError as e:
             detail = e.read().decode("utf-8", errors="replace")[:500]
+            if e.code == 429 and retry_on_429:
+                last_error = AgnesAPIError(f"HTTP 429 @ {endpoint}: {detail}")
+                if attempt < max_retries:
+                    # 限流退避：15s, 30s —— 免费层的窗口以分钟计
+                    time.sleep(15 * attempt)
+                continue
             if 400 <= e.code < 500:
-                # 客户端错误不重试
+                # 其他客户端错误不重试
                 raise AgnesAPIError(f"HTTP {e.code} @ {endpoint}: {detail}") from e
             last_error = AgnesAPIError(f"HTTP {e.code} @ {endpoint}: {detail}")
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
@@ -217,9 +255,9 @@ def request_json(
 
 
 def download_file(url: str, dest: Path, timeout: int = 300) -> Path:
-    """下载 URL 到本地文件。用于保存生成的图片/视频。"""
+    """下载 URL 到本地文件。用于保存生成的图片/视频（同样绕过代理）。"""
     dest.parent.mkdir(parents=True, exist_ok=True)
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    with _OPENER.open(req, timeout=timeout) as resp:
         dest.write_bytes(resp.read())
     return dest

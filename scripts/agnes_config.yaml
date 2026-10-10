@@ -4,7 +4,8 @@
 # API Key 从环境变量 AGNES_API_KEY 读取，绝不落盘。
 
 # 站点选择: "cn" = 中国站, "intl" = 国际站
-site: "cn"
+# 注：密钥与站点绑定，两站不互通。当前密钥为国际站签发，故用 intl。
+site: "intl"
 
 sites:
   cn:
@@ -26,16 +27,20 @@ text:
 
 # 图像模型参数
 image:
-  size: "1024x1024"        # 可选分辨率，按官方文档调整
+  size: "1024x1024"
   timeout: 180
 
-# 视频模型参数
+# 视频模型参数（依据 agnes-video-2.5-flash 官方 schema 修正）
+# 注：Flash 的 size 固定为 "720P"，画幅由 aspect_ratio 决定；
+#     时长字段是 seconds（字符串 "4"-"12"），不存在 duration 字段。
 video:
-  size: "720x1280"         # 竖屏短剧默认；如不支持请改 "1280x720"
-  duration: 5              # 秒，按官方文档允许值调整
-  timeout: 600             # 视频生成耗时长
-  poll_interval: 10        # 轮询间隔（秒）
-  max_poll_attempts: 60    # 最大轮询次数
+  size: "720P"
+  aspect_ratio: "9:16"     # 竖屏短剧；输出分辨率 720x1280
+  seconds: "5"
+  timeout: 600             # 单次请求超时
+  poll_interval: 5         # 轮询间隔（秒）
+  max_poll_attempts: 120   # 最大轮询次数 ≈ 10 分钟
+  create_interval: 45      # 两次「创建任务」之间的最小间隔（秒），规避免费层 429
 
 # 项目路径约定
 paths:

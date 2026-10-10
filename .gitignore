@@ -1,29 +1,67 @@
-# 密钥与隐私文件 — 绝不提交
+# ===================================================================
+# AI 短剧项目 .gitignore
+# 目的：绝不让密钥、照片、视频等私密/大体积内容进入公开仓库
+# ===================================================================
+
+# --- 1. 密钥与私密配置（最高优先，绝不提交）---
 .env
-*.env.local
+.env.*
+!*.env.example
+!**/.env.example
+**/.env
+**/.env.*
 scripts/.env
 
-# 生成的媒体素材（体积大，按需提交）
+# --- 2. 角色照片 / 分镜图 / 生成的图像 ---
+# 所有素材目录下的图片一律不上传
 04_assets/**/*.png
 04_assets/**/*.jpg
 04_assets/**/*.jpeg
+04_assets/**/*.webp
+04_assets/**/*.bmp
+04_assets/**/*.tiff
+
+# --- 3. 视频 / 音频（体积大且含人物形象）---
 04_assets/**/*.mp4
+04_assets/**/*.mov
+04_assets/**/*.avi
+04_assets/**/*.mkv
+04_assets/**/*.webm
 04_assets/**/*.mp3
 04_assets/**/*.wav
+04_assets/**/*.m4a
 05_final/**/*.mp4
+05_final/**/*.mov
+05_final/**/*.mp3
 
-# 临时文件
+# 兜底：任何位置的媒体文件
+**/*.mp4
+**/*.mov
+**/*.mkv
+**/*.webm
+
+# --- 4. 临时文件与日志 ---
 *.tmp
 *.log
 _hw.txt
 _keycheck.txt
+.video_throttle.json
+*.bak
 
-# Python
+# 视频配额探测日志（临时数据，非交付物）
+04_assets/video/_quota*.json
+04_assets/video/_cooldown*.json
+
+# --- 5. Python ---
 __pycache__/
+*.py[cod]
 .venv/
-*.pyc
+venv/
+*.egg-info/
 
-# 双保险：任何层级的 .env
-**/.env
-**/.env.*
-!**/.env.example
+# --- 6. 编辑器 / 系统 ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
