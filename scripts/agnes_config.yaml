@@ -1,0 +1,47 @@
+# Agnes API 适配层配置
+# ==============================
+# 安全要求：本文件不含任何密钥，可安全提交。
+# API Key 从环境变量 AGNES_API_KEY 读取，绝不落盘。
+
+# 站点选择: "cn" = 中国站, "intl" = 国际站
+site: "cn"
+
+sites:
+  cn:
+    base_url: "https://api.agnes-ai.cn/v1"
+  intl:
+    base_url: "https://apihub.agnes-ai.com/v1"
+
+# 模型 ID
+models:
+  text: "agnes-3.0-flash"
+  image: "agnes-image-2.5-flash"
+  video: "agnes-video-2.5-flash"
+
+# 文本模型参数
+text:
+  temperature: 0.8
+  max_tokens: 4096
+  timeout: 120
+
+# 图像模型参数
+image:
+  size: "1024x1024"        # 可选分辨率，按官方文档调整
+  timeout: 180
+
+# 视频模型参数
+video:
+  size: "720x1280"         # 竖屏短剧默认；如不支持请改 "1280x720"
+  duration: 5              # 秒，按官方文档允许值调整
+  timeout: 600             # 视频生成耗时长
+  poll_interval: 10        # 轮询间隔（秒）
+  max_poll_attempts: 60    # 最大轮询次数
+
+# 项目路径约定
+paths:
+  bible: "00_bible"
+  outline: "01_outline"
+  scripts: "02_scripts"
+  storyboard: "03_storyboard"
+  assets: "04_assets"
+  final: "05_final"

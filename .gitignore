@@ -1,0 +1,29 @@
+# 密钥与隐私文件 — 绝不提交
+.env
+*.env.local
+scripts/.env
+
+# 生成的媒体素材（体积大，按需提交）
+04_assets/**/*.png
+04_assets/**/*.jpg
+04_assets/**/*.jpeg
+04_assets/**/*.mp4
+04_assets/**/*.mp3
+04_assets/**/*.wav
+05_final/**/*.mp4
+
+# 临时文件
+*.tmp
+*.log
+_hw.txt
+_keycheck.txt
+
+# Python
+__pycache__/
+.venv/
+*.pyc
+
+# 双保险：任何层级的 .env
+**/.env
+**/.env.*
+!**/.env.example
