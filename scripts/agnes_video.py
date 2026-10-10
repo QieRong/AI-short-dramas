@@ -48,8 +48,18 @@ from agnes_client import (
     has_api_key,
     request_json,
 )
+from extract_frames import extract_frames
 
 _STATE_PATH = Path(__file__).resolve().parent / ".video_throttle.json"
+
+
+def _auto_extract(video: Path) -> None:
+    """视频下载后按 AGENTS.md §3.8 自动抽帧；失败不阻塞主流程。"""
+    try:
+        frames = extract_frames(video, force=True)
+        print(f"[抽帧] {len(frames)} 张 → {frames[0].parent}")
+    except (FileNotFoundError, RuntimeError, OSError) as e:
+        print(f"[抽帧] 失败（不阻塞主流程）：{e}", file=sys.stderr)
 
 
 def _respect_create_interval(config: AgnesConfig) -> None:
@@ -214,6 +224,7 @@ def main() -> int:
 
     dest = download_file(video_url, Path(args.out))
     print(f"[完成] 已保存到 {dest}")
+    _auto_extract(Path(dest))
     return 0
 
 

@@ -22,10 +22,21 @@ import subprocess
 import sys
 from pathlib import Path
 
+from extract_frames import extract_frames
+
 FFMPEG = Path(r"C:\Program Files\File Converter\ffmpeg.exe")
 
 W, H = 720, 1280          # 竖屏输出
 FPS = 30
+
+
+def _auto_extract(video: Path) -> None:
+    """准视频生成后按 AGENTS.md §3.8 自动抽帧；失败不阻塞主流程。"""
+    try:
+        frames = extract_frames(video, force=True)
+        print(f"[抽帧] {len(frames)} 张 → {frames[0].parent}")
+    except (FileNotFoundError, RuntimeError, OSError) as e:
+        print(f"[抽帧] 失败（不阻塞主流程）：{e}", file=sys.stderr)
 
 
 def build_filter(motion: str, duration: int) -> str:
@@ -100,6 +111,7 @@ def main() -> int:
         return 1
     size = out.stat().st_size
     print(f"[完成] {out}  ({size/1024:.0f} KB, {args.duration}s, {args.motion})")
+    _auto_extract(out)
     return 0
 
 
