@@ -1,80 +1,44 @@
 # ===================================================================
 # AI 短剧项目 .gitignore
-# 目的：绝不让密钥、照片、视频等私密/大体积内容进入公开仓库
+# 策略：除密钥外全部公开（2026-10-10 决策）
+#   - 唯一保护目标：API 密钥（.env 系列）
+#   - 图片公开（AI 审查素材必需），视频/音频不公开（体积大且 AI 读不了）
 # ===================================================================
 
-# --- 1. 密钥与私密配置（最高优先，绝不提交）---
+# --- 1. 密钥与私密配置（唯一保护目标，绝不提交）---
 .env
-.env.*
+**/.env
 *.env
 !*.env.example
 !**/.env.example
-**/.env
-**/.env.*
-scripts/.env
 
-# 注：scripts/agnes_config.yaml 经核实不含密钥（密钥走环境变量），
-#     且已入库、脚本依赖它运行，故**不排除**（保留在仓库中）。
+# 注：scripts/agnes_config.yaml 经核实不含密钥（密钥走环境变量），公开。
 
-# --- 2. 角色照片 / 分镜图 / 生成的图像 ---
-# 所有素材目录下的图片一律不上传
-04_assets/**/*.png
-04_assets/**/*.jpg
-04_assets/**/*.jpeg
-04_assets/**/*.webp
-04_assets/**/*.bmp
-04_assets/**/*.tiff
-
-# --- 3. 视频 / 音频（体积大且含人物形象）---
-04_assets/**/*.mp4
-04_assets/**/*.mov
-04_assets/**/*.avi
-04_assets/**/*.mkv
-04_assets/**/*.webm
-04_assets/**/*.mp3
-04_assets/**/*.wav
-04_assets/**/*.m4a
-05_final/**/*.mp4
-05_final/**/*.mov
-05_final/**/*.mp3
-
-# 兜底：任何位置的媒体文件
+# --- 2. 视频 / 音频（体积大，且 AI 无法读取，不入库）---
 **/*.mp4
 **/*.mov
 **/*.mkv
 **/*.webm
-**/*.png
-**/*.jpg
-**/*.jpeg
+**/*.mp3
+**/*.wav
+**/*.m4a
+**/*.avi
 
-# --- 3b. 抽帧衍生品（AGENTS.md v1.7 §3.8）---
+# --- 3. 抽帧衍生品（体积大且可随时重新生成）---
 *_frames/
 *_strip.png
 *_pan_compare.png
 
-# --- 3c. 原创 IP（核心资产，不随自动 push 公开）---
-00_bible/
-01_outline/
-02_scripts/
-03_storyboard/
-.workbuddy/
-04_assets/
-scripts/gen_characters.py
-scripts/gen_linqian_scar.py
-scripts/gen_linqian_scar_boost.py
-scripts/gen_linqian_scar_img2img.py
-
 # --- 4. 临时文件与日志 ---
 *.tmp
 *.log
+*.bak
 _hw.txt
 _keycheck.txt
 .video_throttle.json
-*.bak
-
-# 视频配额探测日志（临时数据，非交付物）
+# 临时探测日志（quota/cooldown），无创作价值
 04_assets/video/_quota*.json
-04_assets/video/_cooldown*.json
+04_assets/video/_cooldown_log.json
 
 # --- 5. Python ---
 __pycache__/
