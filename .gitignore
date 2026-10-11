@@ -36,6 +36,8 @@
 _hw.txt
 _keycheck.txt
 .video_throttle.json
+# compose_video.py 的合成临时目录（归一化片段 + concat 清单）
+.tmp_compose/
 # 临时探测日志（quota/cooldown），无创作价值
 04_assets/video/_quota*.json
 04_assets/video/_cooldown_log.json

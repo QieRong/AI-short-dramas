@@ -10,7 +10,9 @@
 
 ## 已确认的环境
 - Python 3.13.14（托管）、Node 22.22.2（托管）、Git 2.55.0 均已就绪
-- ffmpeg：未入 PATH；已有便携版在 `C:\Program Files\File Converter\ffmpeg.exe`
+- ffmpeg：便携版 `C:\Program Files\File Converter\ffmpeg.exe`（7.1，实测可用）；
+  WinGet 另装了 9.0.2 full build（`...\WinGet\Packages\Gyan.FFmpeg*\ffmpeg-*\bin\`），
+  但 `...\WinGet\Links\` 下的别名桩是 **0 字节、不可执行**——定位外部可执行文件必须**实测运行**，勿只看存在性
 - WorkBuddy 积分：约 2,600（平台内任务额度，不可导出为 API Key）
 
 ## 技术路线决策
@@ -33,13 +35,23 @@
 - **视频 schema（官方）**：`mode` = "text"/"keyframe"/"reference"；`seconds` 字符串 "4"-"12"；
   `size` = "720P"；画幅用 `aspect_ratio`（竖屏 "9:16"→720x1280）；查询 `GET /agnesapi?video_id=&model_name=`
 - **图像支持图生图**：`extra_body.image = ["data:image/png;base64,..."]`，size 用 "1K"/"2K"+`ratio`
-- **视频免费层限流严重**：实测连续调用即 429，5 分钟未恢复（待 24h 后复测确认是否日配额）
+- **视频免费层限流严重**：实测连续调用即 429，5 分钟未恢复
+- **视频计费（官方文档 2026-10-11 核实）**：`agnes-video-2.5-flash` 原价 $0.025/秒、**现价 $0（限时免费）**；
+  非 Flash 版 `agnes-video-2.5` 才按秒计费（第三方所说 ¥0.15/秒 指后者，与本项目选型无关）
 - 图像与文本：免费可用，无问题
+- ⚠️ **2026-10-11 密钥失效**：全端点 401（国际站 "token status unavailable" / 中国站 "无效的令牌"），非 429 限流 → 恢复前所有 API 环节停摆
 
 ## 角色护照（已选定）
-- 林浅：`林浅_护照_补疤img2img_1_半身露腕.png`（基于候选#3 图生图补左腕旧疤）
+- 林浅：`林浅_护照.png`（目视含左腕可辨旧疤，护照已定版；`补疤` 中间产物不在磁盘，**勿再引用旧文件名**）
 - 顾承泽：`顾承泽_护照.png`（候选#3 定版）
 - 说明文件：`04_assets/characters/角色形象说明.md`
+
+## 合成链路（第⑦步）关键事实
+- `compose_video.find_ffmpeg()/find_ffprobe()` 已改为「实测可运行」才采纳（`_runs()`），并枚举 WinGet 真实安装目录
+- `kenburns.py` / `extract_frames.py` 仍**硬编码** File Converter 路径（技术债，未统一）
+- **ffmpeg concat 清单必须写绝对路径**：相对路径以「清单所在目录」为基准，会二次拼接致找不到
+- 合成临时目录 `scripts/.tmp_compose/`（已加入 .gitignore）
+- 2026-10-11 首次端到端合成通过：4 段准视频 → 720x1280 / 30fps / 20s
 
 ## 创作规范（长期）
 - **一个 5 秒片段 = 一个主体动作**（不加长，只拆分）

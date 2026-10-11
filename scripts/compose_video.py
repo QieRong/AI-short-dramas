@@ -13,38 +13,81 @@
 from __future__ import annotations
 
 import argparse
+import glob
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-# 已知的便携 ffmpeg 路径（本机实测存在）
+# 已知的便携 ffmpeg 路径（本机实测可运行）
 KNOWN_FFMPEG_PATHS = [
     r"C:\Program Files\File Converter\ffmpeg.exe",
     r"D:\Program Files\JiJiDown\OrderEXE\ffmpeg.exe",
 ]
 
 
+def _winget_candidates(tool: str) -> list[str]:
+    """枚举 WinGet 安装的 ffmpeg/ffprobe 真实二进制路径。
+
+    背景：WinGet 会在 ...\\WinGet\\Links\\ 生成别名桩，本机这些桩是 0 字节
+    且不可执行（WinError 193）；真实二进制位于 Packages\\Gyan.FFmpeg*\\
+    ffmpeg-*\\bin\\ 下。此处按版本号倒序枚举，供候选链使用。
+    """
+    local = os.environ.get("LOCALAPPDATA")
+    if not local:
+        return []
+    pattern = str(
+        Path(local) / "Microsoft" / "WinGet" / "Packages"
+        / "Gyan.FFmpeg*" / "ffmpeg-*" / "bin" / f"{tool}.exe"
+    )
+    return sorted(glob.glob(pattern), reverse=True)
+
+
+def _runs(path: str) -> bool:
+    """验证可执行文件真能运行（能跑出 -version 输出）。
+
+    背景：WinGet 的 App 执行别名桩（...\\WinGet\\Links\\ffmpeg.exe）是 0 字节文件，
+    shutil.which 能命中，但执行时报 WinError 193。若只用 Path.exists() 判断，
+    会把这类桩误判为可用，导致合成静默失败。故以「能否跑出版本信息」为唯一判据。
+    """
+    try:
+        result = subprocess.run(
+            [path, "-version"], capture_output=True, text=True, timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return result.returncode == 0 and bool((result.stdout or "").strip())
+
+
 def find_ffmpeg() -> str | None:
-    """定位 ffmpeg：优先 PATH，其次已知便携路径。"""
+    """定位可用的 ffmpeg：优先 PATH，其次已知便携路径。
+
+    每个候选都必须通过 _runs() 实测，以跳过 PATH 中的零字节别名桩。
+    """
+    candidates: list[str] = []
     found = shutil.which("ffmpeg")
     if found:
-        return found
-    for path in KNOWN_FFMPEG_PATHS:
-        if Path(path).exists():
+        candidates.append(found)
+    candidates.extend(KNOWN_FFMPEG_PATHS)
+    candidates.extend(_winget_candidates("ffmpeg"))
+    for path in candidates:
+        if Path(path).exists() and _runs(path):
             return path
     return None
 
 
 def find_ffprobe() -> str | None:
-    """定位 ffprobe（与 ffmpeg 同目录）。"""
+    """定位可用的 ffprobe（PATH → 便携 ffmpeg 同目录 → WinGet 真实安装）。"""
+    candidates: list[str] = []
     found = shutil.which("ffprobe")
     if found:
-        return found
-    for path in KNOWN_FFMPEG_PATHS:
-        probe = Path(path).parent / "ffprobe.exe"
-        if probe.exists():
-            return str(probe)
+        candidates.append(found)
+    candidates.extend(str(Path(p).parent / "ffprobe.exe") for p in KNOWN_FFMPEG_PATHS)
+    candidates.extend(_winget_candidates("ffprobe"))
+    for path in candidates:
+        if Path(path).exists() and _runs(path):
+            return path
     return None
 
 
@@ -67,9 +110,11 @@ def concat_clips(ffmpeg: str, clips: list[Path], out: Path, tmp_dir: Path) -> No
         )
         normalized.append(target)
 
+    # 必须写绝对路径：ffmpeg 的 concat 解析器以「清单文件所在目录」为基准，
+    # 相对路径会被二次拼接而找不到文件（.tmp_compose/.tmp_compose/...）。
     list_file = tmp_dir / "concat.txt"
     list_file.write_text(
-        "\n".join(f"file '{c.as_posix()}'" for c in normalized),
+        "\n".join(f"file '{c.resolve().as_posix()}'" for c in normalized),
         encoding="utf-8",
     )
 
