@@ -53,6 +53,14 @@
 - 合成临时目录 `scripts/.tmp_compose/`（已加入 .gitignore）
 - 2026-10-11 首次端到端合成通过：4 段准视频 → 720x1280 / 30fps / 20s
 
+## 配音（第⑥步）关键事实
+- Edge-TTS 完全免费、**无需任何 API Key**（与 Agnes 密钥无关，密钥失效期间仍可用）
+- 音色：林浅 = `zh-CN-XiaoxiaoNeural`；顾承泽 = `zh-CN-YunxiNeural`（语速 −5% ~ −8%）
+- ⚠️ **`--rate` 必须单 token 传 `--rate=-8%`**：edge_tts 用 argparse，拆成
+  `["--rate","-8%"]` 会把 `-8%` 当选项 → 负语速无法表达（已修复 `tts_narrate.py`）
+- 命名：逐句 `AUD_EP{nn}_S{nn}.mp3`；整集音轨 `AUD_EPnn_full.mp3`（AGENTS.md 2.5 待补）
+- 实测：单句 1.37–2.86s，均短于 5 秒镜长 → 音画同步无冲突；时间轴合成用 `adelay + amix(normalize=0) + apad`
+
 ## 创作规范（长期）
 - **一个 5 秒片段 = 一个主体动作**（不加长，只拆分）
 - 每稿定稿前必附"交付前自检清单"（见 EP01/EP02.md 末尾）

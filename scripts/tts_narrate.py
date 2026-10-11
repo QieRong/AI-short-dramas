@@ -7,6 +7,7 @@
 用法：
     python tts_narrate.py --text "你好，世界" --out ../04_assets/audio/line01.mp3
     python tts_narrate.py --text-file lines.txt --out line.mp3 --voice zh-CN-YunxiNeural
+    python tts_narrate.py --text "最后机会。" --out s08.mp3 --rate=-8%   # 负语速须用 = 号
     python tts_narrate.py --list-voices        # 列出中文音色
 """
 
@@ -32,16 +33,25 @@ def ensure_edge_tts() -> bool:
 
 
 def synthesize(text: str, out_path: Path, voice: str, rate: str = "+0%") -> Path:
-    """调用 edge-tts 生成语音。"""
+    """调用 edge-tts 生成语音。
+
+    ⚠️ rate 必须以 `--rate=VALUE` 单 token 传入：edge_tts 内部用 argparse，
+    若拆成 ["--rate", "-10%"]，"-10%" 会被当成选项而报
+    "expected one argument"，导致**负语速完全无法表达**。
+    """
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cmd = [
         sys.executable, "-m", "edge_tts",
         "--text", text,
         "--voice", voice,
-        "--rate", rate,
+        f"--rate={rate}",
         "--write-media", str(out_path),
     ]
-    subprocess.run(cmd, check=True, capture_output=True)
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"edge-tts 失败（退出码 {result.returncode}）：\n{(result.stderr or '')[-800:]}"
+        )
     return out_path
 
 
@@ -84,7 +94,11 @@ def main() -> int:
         print("[错误] 需提供 --text/--text-file 和 --out", file=sys.stderr)
         return 2
 
-    dest = synthesize(text.strip(), Path(args.out), args.voice, args.rate)
+    try:
+        dest = synthesize(text.strip(), Path(args.out), args.voice, args.rate)
+    except RuntimeError as e:
+        print(f"[错误] {e}", file=sys.stderr)
+        return 1
     print(f"[完成] 配音已保存到 {dest}")
     return 0
 
