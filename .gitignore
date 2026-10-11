@@ -29,6 +29,9 @@
 *_strip.png
 *_pan_compare.png
 
+# 分镜图 2K 原图本地留存（入库的是压缩版 1K JPEG，见 03_storyboard/EP01_分镜图提示词.md 第九节）
+04_assets/scenes/_hires/
+
 # --- 4. 临时文件与日志 ---
 *.tmp
 *.log
