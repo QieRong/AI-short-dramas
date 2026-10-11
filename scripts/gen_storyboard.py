@@ -14,9 +14,11 @@
     1. **断点续跑**：目标文件已存在即跳过（除非 --force）——长批次被中断后可原样重跑。
     2. **--compress**：生成用 2K PNG 保质量；入库前转 1K JPEG（默认质量 85），
        2K 原图归档到 `04_assets/scenes/_hires/`（已加入 .gitignore）。
-    3. **特写/大特写镜不传护照图**：护照是半身像，传入会诱导模型保留人脸、弱化"只拍局部"的裁切。
-       景别命中「特写 / 大特写」时默认不传参考图；文档的「参考资产」明确写「无」时同样不传。
-       （可用 --keep-closeup-refs 关闭该规则。）
+    3. **特写/大特写镜不传护照图（限"非面部局部"）**：护照是半身像，传入会诱导模型保留人脸、
+       弱化"只拍局部"的裁切 → 主体为**手 / 道具 / 器物**等与脸无关的局部特写时，默认不传参考图。
+       但主体为**面部局部**（眼睛、嘴唇等）时护照有正向价值（保持双眼形状、睫毛、眼神一致），
+       故在此类镜上仍传护照——由 `CLOSEUP_KEEP_REFS` 白名单显式控制（当前含 S04）。
+       文档的「参考资产」明确写「无」时同样不传。（可用 --keep-closeup-refs 整体关闭该规则。）
     4. 镜与镜之间默认间隔 5 秒，降低触发限流的概率。
 """
 
@@ -46,6 +48,11 @@ CHARACTERS_DIR = BASE_DIR / "04_assets" / "characters"
 
 # 景别命中这些关键词 → 视为"局部特写镜"，默认不传护照图
 CLOSEUP_KEYWORDS = ("特写",)  # "特写" 是 "大特写" 的子串，可一并命中
+
+# 白名单：这些镜虽为特写/大特写，但**主体是面部局部**（眼睛等），护照有正向价值
+# （保持双眼形状、睫毛、眼神一致），故仍然传护照。仅"手 / 道具 / 器物"这类与脸无关的
+# 局部特写才会被规则剥离。新增面部特写镜时在此登记即可（用户裁定 2026-10-11，方案 A）。
+CLOSEUP_KEEP_REFS: set[str] = {"S04"}
 
 # ---------------------------------------------------------------- 数据结构
 
@@ -138,10 +145,10 @@ def decide_refs(shot: Shot, keep_closeup_refs: bool = False) -> Shot:
         shot.ref_note = "不传（文档标注「无」）" if explicit_none else "不传（未指定护照）"
         return shot
 
-    if shot.is_closeup and not keep_closeup_refs:
+    if shot.is_closeup and not keep_closeup_refs and shot.sid not in CLOSEUP_KEEP_REFS:
         shot.refs = []
         shot.ref_note = (
-            f"⚠️ 景别={shot.shot_size} → 按「特写镜不传参考图」规则忽略文档指定的 "
+            f"⚠️ 景别={shot.shot_size} 且为**非面部局部**镜 → 按「特写镜不传参考图」规则忽略文档指定的 "
             f"{'、'.join(passports)}"
         )
         return shot
@@ -265,7 +272,7 @@ def main() -> int:
     parser.add_argument("--force", action="store_true", help="已存在也强制重生成")
     parser.add_argument("--dry-run", action="store_true", help="只打印计划，不调用 API")
     parser.add_argument("--keep-closeup-refs", action="store_true",
-                        help="关闭「特写/大特写不传护照图」规则")
+                        help="关闭「非面部局部特写不传护照图」规则（白名单 CLOSEUP_KEEP_REFS 仍生效）")
     parser.add_argument("--delay", type=float, default=5.0,
                         help="镜与镜之间的间隔秒数（默认 5，降低限流风险）")
     parser.add_argument("--keep-going", action="store_true",
