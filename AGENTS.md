@@ -2,7 +2,7 @@
 
 > 本文件是项目级 Agent 行为契约。任何 AI Agent（含 WorkBuddy、Claude Code、Codex 等）在本项目目录内工作时，必须先阅读并遵守本规范。
 >
-> **版本**：v1.11 ｜ **建立日期**：2026-10-10 ｜ **最后修订**：2026-10-11 ｜ **状态**：待用户审查
+> **版本**：v1.12 ｜ **建立日期**：2026-10-10 ｜ **最后修订**：2026-10-11 ｜ **状态**：待用户审查
 >
 > **本文件只写规则，不写进度。** 当前进度、待办、实测数据见 `docs/PROGRESS.md`。
 
@@ -95,7 +95,7 @@ Agent 在执行任何操作前，必须先判定其等级。**L3 级操作必须
 | ① 剧本     | Agnes `agnes-3.0-flash`       | 免费         | `agnes_text.py`    |
 | ② 分镜     | Agnes `agnes-3.0-flash`       | 免费         | `agnes_text.py`    |
 | ③ 角色图   | Agnes `agnes-image-2.5-flash` | 免费         | `agnes_image.py`   |
-| ④ 分镜图   | Agnes `agnes-image-2.5-flash` | 免费         | `agnes_image.py`   |
+| ④ 分镜图   | Agnes `agnes-image-2.5-flash` | 免费         | `gen_storyboard.py` |
 | ⑤ 视频片段 | Agnes `agnes-video-2.5-flash` | 免费（限时） | `agnes_video.py`   |
 | ⑥ 配音     | Edge-TTS                      | 免费         | `tts_narrate.py`   |
 | ⑦ 合成     | 本机 FFmpeg                   | 免费         | `compose_video.py` |
@@ -107,7 +107,8 @@ Agent 在执行任何操作前，必须先判定其等级。**L3 级操作必须
 | `check_env.py`      | ✅   | 环境自检：检查密钥、FFmpeg、依赖、磁盘空间 | 无              |
 | `agnes_client.py`   | ✅   | 核心封装：配置加载、密钥读取、HTTP 请求（含重试） | `AGNES_API_KEY` |
 | `agnes_text.py`     | ✅   | 统一文本调用封装（剧本 + 分镜共用）        | `AGNES_API_KEY` |
-| `agnes_image.py`    | ✅   | 统一图像调用封装（角色图 + 分镜图共用）    | `AGNES_API_KEY` |
+| `agnes_image.py`    | ✅   | 统一图像调用封装（角色图 + 分镜图共用，支持 `--ref` 图生图） | `AGNES_API_KEY` |
+| `gen_storyboard.py` | ✅   | **分镜图批量生成**：读分镜提示词文档逐镜出图，支持 `--compress`（2K→1K JPEG）、`--dry-run`、断点续跑；特写/大特写默认不传护照图 | `AGNES_API_KEY` |
 | `agnes_video.py`    | ✅   | 视频任务提交 + 轮询 + 下载                 | `AGNES_API_KEY` |
 | `kenburns.py`       | ✅   | 准视频生成（静态图 + FFmpeg 运镜）         | 本机 FFmpeg     |
 | `extract_frames.py` | ✅   | **视频抽帧**：散图 + 长图/对比图双产出（供外部审查） | 本机 FFmpeg     |
@@ -121,8 +122,8 @@ Agent 在执行任何操作前，必须先判定其等级。**L3 级操作必须
 > `gen_characters.py`（角色图批量生成）、`gen_linqian_scar*.py`（图生图补疤，共 3 个）、
 > `test_cooldown.py` / `test_video_quota.py`（额度与限流探测）。
 >
-> **实现状态最后核对日期**：2026-10-10（依据 `scripts/` 实际文件）。
-> 截至该日期：**12 个脚本已实现，1 个（`run_episode.py`）规划中**。
+> **实现状态最后核对日期**：2026-10-11（依据 `scripts/` 实际文件）。
+> 截至该日期：**13 个脚本已实现，1 个（`run_episode.py`）规划中**。
 >
 > 单文件不超过约 300 行，超出则拆模块。
 
@@ -499,5 +500,6 @@ Agent 接手项目时，必须按第 6 节顺序读取上述文件。
 | 2026-10-10 | v1.9 | **IP 保护策略翻转为公开策略**：① 新增 1.5 公开策略章节（除密钥外全部公开）；② 1.3 安全红线「隐私」条目改为「公开范围」并改写风险提示；③ 3.7 自检清单删除 2 条 IP 校验、新增临时日志与全历史密钥扫描校验；④ 3.7 `.gitignore` 必含项**删除 IP 目录排除段**，改用 `**/.env` 全层级排除、补全媒体后缀与临时日志；⑤ 3.7 规则表「中间产物不 push」改为「内容全量公开」 | Agent  |
 | 2026-10-10 | v1.10 | **标注脚本实现状态**（依据 `scripts/` 实际文件核对）：① 2.2 脚本清单新增「状态」列，✅ 已实现 / 📋 规划中；② 修正 2.2 遗漏的 `agnes_client.py`；③ 补充辅助脚本（`gen_characters.py`、`gen_linqian_scar*.py`、`test_*.py`）；④ 3.4 中断恢复、3.8.3 集成点两处 `run_episode.py` 引用标注「规划中」；⑤ 结论：**12 个脚本已实现，1 个（`run_episode.py`）规划中** | Agent  |
 | 2026-10-11 | v1.11 | ① 2.5 命名规范新增「整集音轨」行 `AUD_EP{nn}_full.mp3`（用户指令） | Agent  |
+| 2026-10-11 | v1.12 | ① 2.1 步骤表 ④ 分镜图的对应脚本改为 `gen_storyboard.py`；② 2.2 脚本清单新增 `gen_storyboard.py`（分镜图批量生成，含 `--compress` / 断点续跑 / 特写不传护照）；③ 实现状态核对日期更新为 2026-10-11，结论改为 **13 个已实现，1 个规划中** | Agent  |
 
 **本文件由 Agent 维护。修改前需经用户审查；重大变更须在本表登记，并在 `docs/` 下留变更记录。**
